@@ -1,0 +1,53 @@
+version: '3'
+
+services:
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: running-tests-e2e
+    command: npm run test:integration
+    volumes:
+      - .:/home/node/app
+    depends_on:
+      - db
+    extra_hosts:
+        - "host.docker.internal:172.17.0.1"
+    networks:
+      - template-network
+  
+  db:
+    build: .docker/postgres
+    container_name: template-db
+    restart: always
+    tty: true
+    volumes:
+      - .docker/dbdata:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=root
+    ports:
+      - '5432:5432'
+    networks:
+      - template-network
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: template-pgadmin
+    tty: true
+    environment:
+      - PGADMIN_DEFAULT_HOST=db
+      - PGADMIN_DEFAULT_EMAIL=admin@admin.com
+      - PGADMIN_DEFAULT_PASSWORD=123456
+    ports:
+      - '9000:80'
+    networks:
+      - template-network
+    depends_on:
+      - db
+
+networks:
+  template-network:
+    driver: bridge
